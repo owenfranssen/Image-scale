@@ -1,0 +1,62 @@
+Options +FollowSymLinks -MultiViews -Indexes
+RewriteEngine On
+RewriteBase /
+
+# photos API
+
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_FILENAME} !-s
+RewriteCond %{REQUEST_FILENAME} !^.*jpg$
+RewriteCond %{REQUEST_FILENAME} !^.*webp$
+RewriteCond %{REQUEST_FILENAME} !^.*php$
+RewriteCond %{REQUEST_FILENAME} !^$
+RewriteRule ^(.*)$ api/api.php?rquest=$1 [QSA,NC,L]
+
+# ======================
+
+# SERVE ORIGINAL FILE IF EXISTS
+RewriteCond %{REQUEST_FILENAME} -f
+RewriteRule ^ - [L]
+
+# SERVE CACHED FILE IF EXISTS
+RewriteCond %{REQUEST_URI} ^/photos/(.*)$
+RewriteCond /home/bnbowners/photos/cache/%1 -f
+RewriteRule ^(.*)$ cache/$1 [L]
+
+# LOAD RESIZING SCRIPT IF NOT CACHED
+# == Default
+RewriteRule ([a-zA-Z0-9\-]+)_([0-9]+)x([0-9]+).(jpg|webp) .resize.php?file=$1&width=$2&height=$3&ext=$4 [L,QSA]
+
+# == ImageMagick Library
+RewriteRule ([a-zA-Z0-9\-]+)_([0-9]+)x([0-9]+).ig.jpg .resize-imagick.php?file=$1&width=$2&height=$3 [L,QSA]
+
+# == GD Library
+RewriteRule ([a-zA-Z0-9\-]+)_([0-9]+)x([0-9]+).gd.jpg .resize-gd.php?file=$1&width=$2&height=$3 [L,QSA]
+
+# == Original Size
+RewriteRule ([a-zA-Z0-9\-]+).(jpg|webp) .resize.php?file=$1&ext=$2 [L,QSA]
+
+# ======================
+
+#RewriteCond %{HTTP_HOST} ^photoscdn\.bnbowners\.com$ [OR]
+#RewriteCond %{HTTP_HOST} ^www\.photoscdn\.bnbowners\.com$
+#RewriteRule ^/?$ "http\:\/\/d6t2h4o0pg34t\.cloudfront\.net\/" [R=301,L]
+
+Header set X-Content-Type-Options nosniff
+
+# 1 MONTH FOR ALL YOUR STATIC ASSETS
+ExpiresActive On
+ExpiresDefault "access plus 2 month"
+
+#<filesMatch "\.(jpg|jpeg|png|gif|svg)$">
+  Header set Cache-Control "max-age=31536000, public, immutable"
+  Header set Expires "Sun, 31 Mar 2020 20:00:00 GMT"
+  Header set Last-Modified "Mon, 12 Mar 2019 20:00:00 GMT"
+#</filesMatch>
+
+# php -- BEGIN cPanel-generated handler, do not edit
+# Set the “ea-php71” package as the default “PHP” programming language.
+<IfModule mime_module>
+  AddHandler application/x-httpd-ea-php71 .php .php7 .phtml
+</IfModule>
+# php -- END cPanel-generated handler, do not edit
